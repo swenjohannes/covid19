@@ -83,7 +83,7 @@ dfS.rename(columns = {'Date_measurement':'Date',
                       'RNA_flow_per_100000':'RNA_flow'}, inplace = True)
 dfS.drop(columns = 'Version', inplace = True)
 dfS['Date'] = pd.to_datetime(dfS['Date'], format = '%Y-%m-%d').dt.date
-dfS['Region'] = dfS['Code'].apply(to_region)
+dfS['Region'] = dfS['Code'].apply(code_to_region)
 
 
 timeframe = pd.date_range(start = "2020-09-07", end = date.today()).tolist()
