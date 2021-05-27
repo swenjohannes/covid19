@@ -53,7 +53,7 @@ timeframe = pd.date_range(start = "2020-09-07", end = date.today()).tolist()
 dfRegion = pd.DataFrame(timeframe , columns = ["Date"])
 dfRegion['Date'] = dfRegion['Date'].dt.date
 
-def RNA_Measure(data, measureDate, selectedRegion, surroundingDays = 10):
+def RNA_Measure(data, measureDate, selectedRegion, inhabitants_region, surroundingDays = 10):
     
     
     measureValues = dfS[(dfS['Date'] >= measureDate - timedelta(days = surroundingDays)) & 
@@ -62,16 +62,21 @@ def RNA_Measure(data, measureDate, selectedRegion, surroundingDays = 10):
     
     measurement = measureValues['RNA_flow'].mean()
     
+    measurement = measurement*inhabitants_region
+    
     return measurement
 
-regions = {'Dr', 'Fl', 'Fr', 'Ge', 'Gr', 'Lm', 'Nb', 'Nh', 'Ov', 'Ut', 'Ze', 'Zh'}
+regions = ['Dr', 'Fl', 'Fr', 'Ge', 'Gr', 'Lm', 'Nb', 'Nh', 'Ov', 'Ut', 'Ze', 'Zh']
+inhabitants_per_region = [495, 428, 651, 2097, 587, 1116, 2574, 2888, 1166, 1361, 385, 3726]
 
 dfRegion
 
-for region in regions:
+for i in range(0,len(regions)):
+    region = regions[i]
+    inhabitants = inhabitants_per_region[i]
     dfRegion[region] = ""
     for index in range(0,len(dfRegion)):
-        dfRegion[region][index] = RNA_Measure(dfS, dfRegion['Date'][index], region)
+        dfRegion[region][index] = RNA_Measure(dfS, dfRegion['Date'][index], region, inhabitants)
 
 dfRegion = dfRegion.melt(id_vars=['Date'], value_vars = regions,
                          var_name='Province', value_name='RNA_Flow')
