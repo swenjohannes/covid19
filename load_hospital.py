@@ -17,3 +17,4 @@ dfHos.rename(columns = {'date':'Date',
                         'Hospital_Intake_Proven': 'Hospital_admission'},
              inplace = True)
 
+dfHos.Date = pd.to_datetime(dfHos.Date, format = '%Y-%m-%d').dt.date
