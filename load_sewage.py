@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri May  7 11:28:26 2021
-
 @author: Swen, Peter, Rob
 """
 
 #Import Required Libraries 
 import pandas as pd
+import numpy as np
 from datetime import date, timedelta
 
 #Import Sewage RNA Data
@@ -80,5 +80,7 @@ for i in range(0,len(regions)):
 
 dfRegion = dfRegion.melt(id_vars=['Date'], value_vars = regions,
                          var_name='Province', value_name='RNA_Flow')
+dfRegion = dfRegion.groupby("Date").agg({'RNA_Flow':'sum'})
+dfRegion['RNA_Flow'] =  np.log(pd.to_numeric(dfRegion['RNA_Flow']))
 
-dfRegion['RNA_Flow'] =  pd.to_numeric(dfRegion['RNA_Flow'])
+
