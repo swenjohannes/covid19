@@ -15,9 +15,9 @@ import load_los
 
 #get data
 dfHos = load_hospital.dfHos
-dfRegion = load_sewage.dfRegion
+dfS = load_sewage.dfS
 dfLoS =  load_los.dfLoS
 
 # Merge hospital & sewage data 
-df = pd.merge(dfRegion, dfHos, on = ['Date', 'Province'], how = 'left')
+df = pd.merge(dfS, dfHos, on = ['Date'], how = 'left')
 
