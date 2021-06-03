@@ -69,8 +69,6 @@ def RNA_Measure(data, measureDate, selectedRegion, inhabitants_region, surroundi
 regions = ['Dr', 'Fl', 'Fr', 'Ge', 'Gr', 'Lm', 'Nb', 'Nh', 'Ov', 'Ut', 'Ze', 'Zh']
 inhabitants_per_region = [495, 428, 651, 2097, 587, 1116, 2574, 2888, 1166, 1361, 385, 3726]
 
-dfRegion
-
 for i in range(0,len(regions)):
     region = regions[i]
     inhabitants = inhabitants_per_region[i]
