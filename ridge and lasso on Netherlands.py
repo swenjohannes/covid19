@@ -7,7 +7,6 @@ Created on Fri May  7 12:21:17 2021
 import sklearn
 import numpy as np
 import pandas as pd
-import yellowbrick
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import cross_val_score
