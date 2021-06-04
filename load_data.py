@@ -20,3 +20,4 @@ dfLoS =  load_los.dfLoS
 
 # Merge hospital & sewage data 
 df = pd.merge(dfS, dfHos, on = ['Date'], how = 'left')
+df 
