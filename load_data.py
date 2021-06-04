@@ -21,11 +21,8 @@ dfLoS =  load_los.dfLoS
 # Merge hospital & sewage data 
 df = pd.merge(dfS, dfHos, on = ['Date'], how = 'left')
 
-df
+#Set Date as index column & filter test period
+df = df.set_index('Date')
+enddate = pd.to_datetime("2021-05-23").date()
+df = df.loc[:enddate]
 
-# end date of the data used is 2021-05-23
-df.index = df['Date']
-df=df.drop(columns = 'Date')
-df.index = pd.to_datetime(df.index)
-before_end_date = df.index<='2021-05-23'
-df=df[before_end_date]
