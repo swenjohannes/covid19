@@ -7,6 +7,7 @@ Created on Fri May  7 12:21:17 2021
 import sklearn
 import numpy as np
 import pandas as pd
+import yellowbrick
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import cross_val_score
@@ -15,19 +16,6 @@ import math
 import load_data
 
 data, dataLoS = load_data.df, load_data.dfLoS
-
-
-data=data.groupby('Date').agg({'RNA_Flow':'sum',
-                               'Hospital_admission':'sum',
-                               'Total_reported':'sum'})
-
-
-data.index = pd.to_datetime(data.index)
-before_end_date = data.index<='2021-05-23'
-data=data[before_end_date]
-
-#log of RNA flow already done before importing data? Else
-data['RNA_Flow'] = np.log(data['RNA_Flow'])
 
 # add dummies for days of the week
 week_days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
@@ -95,6 +83,7 @@ def mean_absolute_error(y_true, y_pred):
 def root_mean_square_deviation(y_true, y_pred):
     return math.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred))
 
+
 def plotModelResults(model, X_train=X_train, X_test=X_test, plot_intervals=False):
     """
         Plots modelled vs fact values, prediction intervals and anomalies
@@ -130,7 +119,7 @@ def plotModelResults(model, X_train=X_train, X_test=X_test, plot_intervals=False
     MAE = round(MAE, 2)
     RMSE = round(RMSE, 2)
     
-    plt.title("MAPE: {}%, MAE: {}, RSE: {}".format(MAPE, MAE, RMSE))
+    plt.title("MAPE: {}%, MAE: {}, RMSE: {}".format(MAPE, MAE, RMSE))
     plt.legend(loc="best")
     plt.tight_layout()
     plt.grid(True);
@@ -170,7 +159,7 @@ plotCoefficients(lr)
 
 from sklearn.linear_model import LassoCV, RidgeCV
 
-lambdas = list(np.arange(0,20,0.1))
+lambdas = list(np.arange(0.001,2,0.001))
 
 lasso = LassoCV(max_iter=10000, cv=tscv,alphas=lambdas)
 lasso.fit(X_train_scaled, y_train)
@@ -178,6 +167,7 @@ lasso.fit(X_train_scaled, y_train)
 
 ridge = RidgeCV(cv=tscv,alphas=lambdas)
 ridge.fit(X_train_scaled, y_train)
+
 
 plotModelResults(ridge, 
                  X_train=X_train_scaled, 
@@ -193,7 +183,6 @@ plotModelResults(lasso,
                  plot_intervals=True)
 plotCoefficients(lasso)
 
-
 coefficients_lasso = pd.Series(lasso.coef_,index=X_train.columns.values)
 coefficients_lasso.to_csv('lasso_coef.csv',header=False)    
 coefficients_ridge = pd.Series(ridge.coef_,index=X_train.columns.values)
@@ -201,8 +190,12 @@ coefficients_ridge.to_csv('ridge_coef.csv',header=False)
 coefficients_lr = pd.Series(lr.coef_,index=X_train.columns.values)
 coefficients_lr.to_csv('lr_coef.csv',header=False)
 
-# to see how it fits on train data, change rule 95 to y.train instead of y.test
 
+
+# To see how they fit on the train data:
+
+def MSE(y_true, y_pred):
+    return sklearn.metrics.mean_squared_error(y_true, y_pred)
 
 def plotModelFit(model, X_train=X_train, X_test=X_test, plot_intervals=False):
     """
@@ -234,12 +227,16 @@ def plotModelFit(model, X_train=X_train, X_test=X_test, plot_intervals=False):
     MAPE = mean_absolute_percentage_error(prediction, y_train)
     MAE = mean_absolute_error(prediction, y_train)
     RMSE = root_mean_square_deviation(prediction, y_train)
+    MSE_ = MSE(prediction, y_train)
+    
     
     MAPE = round(MAPE, 2)
     MAE = round(MAE, 2)
     RMSE = round(RMSE, 2)
+    MSE_= round(MSE_, 2)
     
-    plt.title("MAPE: {}%, MAE: {}, RSE: {}".format(MAPE, MAE, RMSE))
+    
+    plt.title("MAPE: {}%, MAE: {}, RMSE: {}, MSE: {}".format(MAPE, MAE, RMSE, MSE_))
     plt.legend(loc="best")
     plt.tight_layout()
     plt.grid(True);
@@ -259,6 +256,77 @@ plotModelFit(ridge,
                  X_train=X_train_scaled, 
                  X_test=X_train_scaled, 
                  plot_intervals=False)
+
+
+
+
+
+
+
+
+
+
+#construct predictions used in the Monte-Carlo
+
+# Import all datasets
+import load_hospital
+import load_sewage
+
+#get data
+dfHos = load_hospital.dfHos
+dfS = load_sewage.dfRegion
+
+# Merge hospital & sewage data 
+df = pd.merge(dfS, dfHos, on = ['Date'], how = 'left')
+
+df
+
+df.index = df['Date']
+df=df.drop(columns = 'Date')
+df.index = pd.to_datetime(df.index)
+
+
+# add dummies for days of the week
+week_days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+for i in range(0,6):
+    df[week_days[i]] = (df.index.weekday == i).astype(int)
+
+    
+# Adding the lag of the possitive tests from from 1 to 3 weeks back
+for i in range(7,22):
+    df["Total_reported_lag_{}".format(i)] = df.Total_reported.shift(i)
+    
+# Adding the lag of the possitive tests from 1 to 3 weeks back
+for i in range(7,22):
+    df["RNA_Flow_lag_{}".format(i)] = df.RNA_Flow.shift(i)
+    
+
+df = df.drop(columns=['RNA_Flow'])
+df = df.drop(columns=['Total_reported'])
+df = df.drop(columns=['Hospital_admission'])
+
+
+after_end_date = df.index>='2021-05-24'
+stop_date = df.index<='2021-05-30'
+
+df=df[after_end_date]
+df=df[stop_date]
+X_MC = scaler.transform(df)
+prediction = lasso.predict(X_MC)
+
+predic_lasso = pd.Series(prediction)
+predic_lasso.to_csv('predic_lasso.csv',header=False)  
+
+prediction = ridge.predict(X_MC)
+
+predic_ridge = pd.Series(prediction)
+predic_ridge.to_csv('predic_ridge.csv',header=False)    
+
+
+prediction = lr.predict(X_MC)
+
+predic_OLS = pd.Series(prediction)
+predic_OLS.to_csv('predic_OLS.csv',header=False)    
 
 
 
