@@ -2,7 +2,7 @@
 """
 Created on Fri May  7 11:28:31 2021
 
-@author: Swen
+@author: Swen, Rob, Peter
 """
 
 #Libraries
@@ -20,5 +20,3 @@ dfLoS =  load_los.dfLoS
 
 # Merge hospital & sewage data 
 df = pd.merge(dfS, dfHos, on = ['Date'], how = 'left')
-
-df
